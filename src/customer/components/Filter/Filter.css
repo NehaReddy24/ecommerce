@@ -1,0 +1,66 @@
+/* src/customer/components/Filter/Filter.css */
+.filter-section {
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  .filter-section-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .filter-group {
+    margin-bottom: 0.8rem;
+  }
+  
+  .filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  
+  .expand-icon {
+    font-size: 1rem;
+    color: #777;
+  }
+  
+  .filter-options {
+    padding-left: 1rem;
+    margin-top: 0.3rem;
+  }
+  
+  .filter-option-label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .filter-option-label input[type="checkbox"] {
+    margin-right: 0.5rem;
+  }
+  
+  .price-range-inputs,
+  .discount-range-inputs {
+    display: flex;
+    align-items: center;
+  }
+  
+  .price-input {
+    padding: 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-right: 0.3rem;
+    width: 45%;
+    font-size: 0.9rem;
+  }
+  
+  .separator {
+    margin: 0 0.3rem;
+    color: #777;
+  }

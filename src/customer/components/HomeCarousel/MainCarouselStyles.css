@@ -1,0 +1,38 @@
+.main-carousel-container {
+    width: 50%;
+    margin: 0 auto;
+}
+
+.carousel-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.carousel-item img {
+    max-width: 100%; /* Ensure images don't exceed the item's width */
+    height: auto; /* Maintain aspect ratio */
+    display: block; /* Prevent extra space below inline images */
+}
+
+/* Optional: Style the Alice Carousel navigation dots */
+.alice-carousel__dots {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.alice-carousel__dots-item {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ccc;
+    margin: 0 0.5rem;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
+.alice-carousel__dots-item.__active {
+    background-color: #007bff; /* Example active dot color */
+}

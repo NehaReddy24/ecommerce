@@ -1,0 +1,104 @@
+/* src/customer/components/HomeSectionCard/HomeSectionCard.css */
+.home-section-card {
+    /* Styles for the general card layout */
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .home-section-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .home-section-card .relative a {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .home-section-card img {
+    width: 100%;
+    display: block;
+    aspect-ratio: 1 / 1; /* Maintain square aspect ratio */
+    object-fit: cover;
+  }
+  
+  .home-section-card h3 {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin: 10px 15px 5px;
+  }
+  
+  .home-section-card p {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 15px 10px;
+  }
+  
+  .home-section-card .add-to-cart-button {
+    display: block;
+    width: 100%;
+    padding: 10px 15px;
+    background-color: #007bff; /* Example button color */
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .home-section-card .add-to-cart-button:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Styles for the category card (when product prop is missing) */
+  .home-section-card .category-card {
+    padding: 15px;
+    text-align: center;
+  }
+  
+  .home-section-card .category-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin: 0 auto 10px;
+    display: block;
+  }
+  
+  .home-section-card .category-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .home-section-card .category-description {
+    font-size: 0.85rem;
+    color: #777;
+    margin-bottom: 10px;
+  }
+  
+  .home-section-card .browse-category-button {
+    display: inline-block;
+    padding: 8px 15px;
+    background-color: #28a745; /* Example browse button color */
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    transition: background-color 0.3s ease;
+  }
+  
+  .home-section-card .browse-category-button:hover {
+    background-color: #1e7e34;
+  }
+  
+  /* Styles for the wishlist button (adjust as needed) */
+  .home-section-card .relative button {
+    /* ... your wishlist button styles ... */
+  }

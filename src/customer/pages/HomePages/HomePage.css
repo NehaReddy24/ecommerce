@@ -1,0 +1,11 @@
+/* src/customer/pages/HomePages/HomePage.css */
+.home-page {
+    padding: 20px;
+  }
+  
+  .featured-products {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+  }
