@@ -1,0 +1,25 @@
+package com.products.payload.response; // Adjust package as needed
+
+// Simple class to hold the JWT token in the login response
+public class JwtResponse {
+    private String token;
+    private String type = "Bearer"; // Standard token type
+    // You might add user details or role here too if needed by the frontend immediately
+    // private Long id;
+    // private String username;
+    // private List<String> roles;
+
+    // Constructor
+    public JwtResponse(String accessToken) {
+        this.token = accessToken;
+    }
+
+    // Getters (Setters are usually not needed for response DTOs)
+    public String getAccessToken() { return token; }
+    public String getTokenType() { return type; }
+
+    // Getters for other fields if added
+    // public Long getId() { return id; }
+    // public String getUsername() { return username; }
+    // public List<String> getRoles() { return roles; }
+}

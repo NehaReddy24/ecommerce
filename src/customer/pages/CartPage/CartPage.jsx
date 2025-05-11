@@ -1,9 +1,8 @@
-// src/customer/pages/CartPage/CartPage.jsx
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import './CartPage.css'; // Import CSS for styling
+import './CartPage.css';
 
 const CartPage = () => {
     const { cart, removeFromCart, updateQuantity } = useContext(CartContext);
@@ -40,7 +39,7 @@ const CartPage = () => {
                             <img src={item.imageUrl || '/placeholder.jpg'} alt={item.name} className="cart-item-image" />
                             <div className="cart-item-details">
                                 <h3 className="cart-item-name">{item.name}</h3>
-                                <p className="cart-item-price">${item.price}</p>
+                                <p className="cart-item-price">₹{item.price}</p>
                             </div>
                         </Link>
                         <div className="cart-item-quantity">
@@ -66,7 +65,7 @@ const CartPage = () => {
                 ))}
             </ul>
             <div className="cart-summary">
-                <p className="cart-subtotal">Subtotal: ${calculateTotal()}</p>
+                <p className="cart-subtotal">Subtotal: ₹{calculateTotal()}</p> {/* Corrected currency symbol */}
                 <Link to="/checkout" className="cart-checkout-button">Proceed to Checkout</Link>
             </div>
         </div>

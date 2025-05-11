@@ -1,0 +1,108 @@
+package com.products.config; // Adjust package as needed
+
+import com.products.security.JwtAuthenticationFilter; // Import your JWT Filter
+import com.products.security.JwtAuthenticationEntryPoint; // You'll create this in the next step for handling auth errors
+import com.products.CustomUserDetailsService; // Import your CustomUserDetailsService
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider; // Use DaoAuthenticationProvider
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.password.PasswordEncoder; // Import PasswordEncoder
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Import the filter class
+
+@Configuration // Indicates this is a Spring configuration class
+@EnableWebSecurity // Enables Spring Security's web security support
+public class SecurityConfig {
+
+    private final CustomUserDetailsService userDetailsService; // Inject your custom UserDetailsService
+    private final JwtAuthenticationFilter jwtAuthenticationFilter; // Inject your JWT filter
+    // private final JwtAuthenticationEntryPoint authenticationEntryPoint; // Inject auth entry point
+
+    / Constructor injection
+    public SecurityConfig(
+            CustomUserDetailsService userDetailsService,
+            JwtAuthenticationFilter jwtAuthenticationFilter
+            // JwtAuthenticationEntryPoint authenticationEntryPoint // Inject auth entry point here too
+    ) {
+        this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        // this.authenticationEntryPoint = authenticationEntryPoint; // Assign auth entry point
+    }
+
+    // Configure Password Encoder (already did this, just ensure it's here)
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        // Use BCrypt for password hashing
+        return new BCryptPasswordEncoder();
+    }
+
+     // Configure Authentication Provider (uses UserDetailsService and PasswordEncoder)
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService); // Set your custom user details service
+        authProvider.setPasswordEncoder(passwordEncoder()); // Set your password encoder
+        return authProvider;
+    }
+
+    // Expose AuthenticationManager bean
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    // Configure the Security Filter Chain - This defines the core security rules
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            // Disable CSRF for stateless API as we use JWT
+            .csrf(csrf -> csrf.disable())
+            // Configure exception handling (for unauthorized access) - Implement JwtAuthenticationEntryPoint next
+            // .exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
+
+            // Define authorization rules for HTTP requests
+            .authorizeHttpRequests(authorize -> authorize
+                // --- Public Endpoints ---
+                // Permit access to your authentication endpoints (login/register)
+                // You'll create these in the AuthController
+                .requestMatchers("/api/auth/**").permitAll()
+
+                // Permit GET access to product endpoints for viewing products
+                .requestMatchers("/api/products").permitAll() // Allow anyone to view all products (GET)
+                .requestMatchers("/api/products/{id}").permitAll() // Allow anyone to view a single product (GET)
+
+                // --- Protected Endpoints ---
+                // Require ADMIN role for creating, updating, and deleting products
+                // Note: For /api/products (POST), the requestMatchers matches both GET and POST by default if not specified.
+                // You can make it more specific:
+                 .requestMatchers("/api/products").hasRole("ADMIN") // Explicitly require ADMIN for POST /api/products
+                 .requestMatchers("/api/products/{id}").hasRole("ADMIN") // Require ADMIN for PUT and DELETE on /api/products/{id}
+
+                // Example: Any other '/api/admin/**' endpoint would require ADMIN role
+                // .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // All other requests require authentication
+                .anyRequest().authenticated()
+            )
+            // Configure session management to be stateless (essential for JWT)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // Register your Authentication Provider
+            .authenticationProvider(authenticationProvider())
+
+            // Add your JWT filter before Spring Security's default UsernamePasswordAuthenticationFilter
+            // This ensures your JWT filter runs first to authenticate based on the token
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    // You might also add a bean for CorsConfigurationSource if needed for more advanced CORS setup
+    // but the @CrossOrigin annotation is often sufficient for simple cases.
+}

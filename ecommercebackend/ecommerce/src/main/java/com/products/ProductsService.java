@@ -1,6 +1,5 @@
-package com.products;
 
-import org.springframework.beans.factory.annotation.Autowired;
+package com.products;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -9,8 +8,11 @@ import java.util.Optional;
 @Service
 public class ProductsService {
 
-    @Autowired
-    private ProductsRepository productsRepository;
+    private final ProductsRepository productsRepository;
+
+    public ProductsService(ProductsRepository productsRepository) {
+        this.productsRepository = productsRepository;
+    }
 
     public List<Products> getAllProducts() {
         return productsRepository.findAll();
@@ -20,21 +22,13 @@ public class ProductsService {
         return productsRepository.findById(id);
     }
 
-    public Products addProduct(Products product) {
+    public Products createProduct(Products product) {
         return productsRepository.save(product);
-    }
-
-    public Products updateProduct(Long id, Products updatedProduct) {
-        return productsRepository.findById(id).map(product -> {
-            product.setName(updatedProduct.getName());
-            product.setPrice(updatedProduct.getPrice());
-            product.setImage(updatedProduct.getImage());
-            product.setCategory(updatedProduct.getCategory());
-            return productsRepository.save(product);
-        }).orElse(null);
     }
 
     public void deleteProduct(Long id) {
         productsRepository.deleteById(id);
     }
+
+   
 }

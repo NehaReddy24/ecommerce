@@ -1,0 +1,117 @@
+package com.products.config; // Adjust package as needed
+
+import com.products.security.JwtAuthenticationFilter;
+import com.products.security.JwtAuthenticationEntryPoint;
+import com.products.service.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtAuthenticationEntryPoint authenticationEntryPoint;
+
+
+    @Autowired
+    public SecurityConfig(
+            CustomUserDetailsService userDetailsService,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            JwtAuthenticationEntryPoint authenticationEntryPoint
+    ) {
+        this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.authenticationEntryPoint = authenticationEntryPoint;
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    // Optional: Configure CORS globally if needed, otherwise @CrossOrigin on controllers is fine
+    // This global configuration might be useful if you have many controllers
+    @Bean
+    public CorsFilter corsFilter() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true); // Allow cookies, authorization headers, etc.
+        config.setAllowedOrigins(Arrays.asList("http://localhost:3001")); // Your frontend origin
+        config.setAllowedHeaders(Arrays.asList("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        source.registerCorsConfiguration("/**", config); // Apply CORS to all paths
+        return new CorsFilter(source);
+    }
+
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint)) // Handle auth errors
+
+            .authorizeHttpRequests(authorize -> authorize
+                // --- Public Endpoints ---
+                // Allow authentication endpoints (login/register)
+                .requestMatchers("/api/auth/**").permitAll()
+
+                // Allow GET access to product endpoints for viewing
+                .requestMatchers("/api/products").permitAll()
+                .requestMatchers("/api/products/{id}").permitAll()
+
+
+                // --- Protected Endpoints ---
+                // Require ADMIN role for product creation, update, delete
+                 .requestMatchers("/api/products").hasRole("ADMIN") // POST /api/products
+                 .requestMatchers("/api/products/{id}").hasRole("ADMIN") // PUT/DELETE /api/products/{id}
+
+
+                // Example: Any other '/api/admin/**' endpoint requires ADMIN role
+                // .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                // All other requests require authentication
+                .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authenticationProvider(authenticationProvider()) // Set the custom authentication provider
+            // Add the JWT filter before Spring Security's default filter
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // If you used the global CorsFilter bean, you don't need @CrossOrigin on controllers
+        // If not using the global bean, ensure @CrossOrigin(origins = "http://localhost:3001")
+        // is on your ProductsController and AuthController
+
+        return http.build();
+    }
+}

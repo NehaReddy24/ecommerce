@@ -1,0 +1,59 @@
+/* Optional: Apply a base font size and family to the checkout page container */
+.checkout-container {
+    font-family: Arial, sans-serif; /* Example font family, change as you like */
+    font-size: 1rem; /* Base font size, 1rem is typically 16px */
+    padding: 20px; /* Add some padding around the content */
+}
+
+/* Style the labels to increase font size */
+.checkout-container label {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    display: block;
+    font-weight: medium;
+}
+
+/* Style the input fields to make them bigger */
+.checkout-container input[type="text"],
+.checkout-container input[type="tel"],
+.checkout-container input[type="email"], /* Add other input types if needed */
+.checkout-container input[type="password"] {
+    font-size: 1rem;
+    padding: 10px 12px;
+    margin-top: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Style the headings */
+.checkout-container h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+/* Style the order summary box */
+.order-summary-box {
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+/* Style the subtotal line */
+.order-summary-box .subtotal {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #ccc;
+}
+
+/* Style the Continue button */
+.checkout-container button[type="submit"] {
+    font-size: 1.1rem;
+    padding: 12px 20px;
+    /* Tailwind classes in JSX might override some button styles */
+}

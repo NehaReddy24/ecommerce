@@ -1,0 +1,108 @@
+package com.products;
+
+
+
+import com.products.User; // Import your User entity
+import com.products.UserRepository; // Import your UserRepository
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize; // Import PreAuthorize
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException; // Import exception
+import org.springframework.web.bind.annotation.*;
+
+// Assuming your frontend is on http://localhost:3003 now
+@CrossOrigin(origins = "http://localhost:3003", maxAge = 3600)
+@RestController
+@RequestMapping("/api/user") // Base path for user-specific endpoints
+public class UserController {
+
+    private final UserRepository userRepository; // Inject UserRepository
+
+    @Autowired
+    public UserController(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    // Endpoint for a logged-in user to save their shipping address
+    // Requires authenticated user
+    @PutMapping("/address") // Use PUT for updating
+    @PreAuthorize("isAuthenticated()") // Only allow authenticated users to access this
+    public ResponseEntity<?> saveShippingAddress(@RequestBody User userWithAddress, Authentication authentication) {
+
+        // Get the username of the currently authenticated user from the security context
+        String username = authentication.getName();
+
+        // Find the user in the database by username
+        User user = userRepository.findByUsername(username)
+                                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+
+        // Update the shipping address fields of the found user entity
+        user.setShippingFullName(userWithAddress.getShippingFullName());
+        user.setShippingAddressLine1(userWithAddress.getShippingAddressLine1());
+        user.setShippingAddressLine2(userWithAddress.getShippingAddressLine2());
+        user.setShippingCity(userWithAddress.getShippingCity());
+        user.setShippingState(userWithAddress.getShippingState());
+        user.setShippingPostalCode(userWithAddress.getShippingPostalCode());
+        user.setShippingCountry(userWithAddress.getShippingCountry());
+        user.setShippingPhoneNumber(userWithAddress.getShippingPhoneNumber());
+
+        // Save the updated user entity back to the database
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Shipping address saved successfully!");
+    }
+
+    // Endpoint for a logged-in user to get their saved shipping address
+    @GetMapping("/address")
+    @PreAuthorize("isAuthenticated()") // Only allow authenticated users to access this
+    public ResponseEntity<?> getShippingAddress(Authentication authentication) {
+         // Get the username of the currently authenticated user
+        String username = authentication.getName();
+
+        // Find the user in the database
+        User user = userRepository.findByUsername(username)
+                                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+
+        // Return only the shipping address fields (you might create a separate DTO for this)
+        // For simplicity, we'll return a map or create a quick object
+         class ShippingAddressResponse {
+             public String fullName = user.getShippingFullName();
+             public String addressLine1 = user.getShippingAddressLine1();
+             public String addressLine2 = user.getShippingAddressLine2();
+             public String city = user.getShippingCity();
+             public String state = user.getShippingState();
+             public String postalCode = user.getShippingPostalCode();
+             public String country = user.getShippingCountry();
+             public String phoneNumber = user.getShippingPhoneNumber();
+         }
+
+
+        return ResponseEntity.ok(new ShippingAddressResponse());
+    }
+
+
+    // --- Example: Admin endpoint to get details of ANY user by ID ---
+    // Requires ADMIN role
+    @GetMapping("/{userId}")
+    @PreAuthorize("hasRole('ADMIN')") // Only allow users with ROLE_ADMIN
+    public ResponseEntity<?> getUserDetailsById(@PathVariable Long userId) {
+         User user = userRepository.findById(userId)
+                                  .orElseThrow(() -> new UsernameNotFoundException("User Not Found with id: " + userId));
+        // You might return a DTO here to avoid exposing sensitive info like encoded password
+         return ResponseEntity.ok(user); // Be cautious about exposing sensitive data
+    }
+
+    // --- Example: Admin endpoint to get a list of all users ---
+    // Requires ADMIN role
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')") // Only allow users with ROLE_ADMIN
+    public ResponseEntity<?> getAllUsers() {
+         List<User> users = userRepository.findAll();
+         // You might map this to a list of DTOs
+         return ResponseEntity.ok(users); // Be cautious about exposing sensitive data
+    }
+}

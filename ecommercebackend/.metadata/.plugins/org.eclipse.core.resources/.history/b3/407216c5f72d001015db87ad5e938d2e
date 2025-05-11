@@ -1,0 +1,99 @@
+package com.products.controller; // Adjust package as needed
+
+import com.products.User; // Import your User entity
+import com.products.payload.request.LoginRequest; // Import LoginRequest DTO
+import com.products.payload.response.JwtResponse; // Import JwtResponse DTO
+import com.products.UserRepository; // Import your UserRepository
+import com.products.security.JwtHelper; // Import your JwtHelper
+import com.products.CustomUserDetailsService; // Import your CustomUserDetailsService
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder; // Import PasswordEncoder
+import org.springframework.web.bind.annotation.CrossOrigin; // Import CrossOrigin
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+
+@CrossOrigin(origins = "http://localhost:3001", maxAge = 3600) 
+@RestController // Indicates this is a REST Controller
+@RequestMapping("/api/auth") 
+public class AuthController {
+
+    private final AuthenticationManager authenticationManager; // Inject AuthenticationManager
+    private final UserRepository userRepository; // Inject UserRepository
+    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
+    private final JwtHelper jwtHelper; // Inject JwtHelper
+    private final CustomUserDetailsService userDetailsService; // Inject CustomUserDetailsService
+
+
+    
+    public AuthController(
+            AuthenticationManager authenticationManager,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtHelper jwtHelper,
+            CustomUserDetailsService userDetailsService
+    ) {
+        this.authenticationManager = authenticationManager;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtHelper = jwtHelper;
+        this.userDetailsService = userDetailsService;
+    }
+
+    
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody User newUser) {
+       
+        if (userRepository.existsByUsername(newUser.getUsername())) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Error: Username is already taken!");
+        }
+
+        
+        User user = new User(
+                newUser.getUsername(),
+                passwordEncoder.encode(newUser.getPassword()), 
+                newUser.getRole() != null ? newUser.getRole() : "ROLE_USER" 
+        );
+
+        // Save the user to the database
+        userRepository.save(user);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully!");
+    }
+
+ 
+    @PostMapping("/login")
+    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
+       
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequest.getUsername(),
+                        loginRequest.getPassword()
+                )
+        );
+
+      
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+      
+        UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+
+     
+        String jwt = jwtHelper.generateToken(userDetails);
+
+        return ResponseEntity.ok(new JwtResponse(jwt));
+    }
+
+  
+}

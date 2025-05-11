@@ -1,0 +1,94 @@
+package com.products.security; // Adjust package as needed
+
+import com.products.CustomUserDetailsService; // Import your CustomUserDetailsService
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+
+@Component // Mark this as a Spring Component
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtHelper jwtHelper; // Inject the JWT helper
+    private final CustomUserDetailsService userDetailsService; // Inject your user details service
+
+    @Autowired
+    public JwtAuthenticationFilter(JwtHelper jwtHelper, CustomUserDetailsService userDetailsService) {
+        this.jwtHelper = jwtHelper;
+        this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
+        // 1. Get the Authorization header
+        final String authHeader = request.getHeader("Authorization");
+        final String jwt;
+        final String username;
+
+        // 2. Check if the header is present and starts with "Bearer "
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // If no JWT is found, continue the filter chain (Spring Security will handle unauthorized access later if the endpoint is protected)
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 3. Extract the JWT token (remove "Bearer " prefix)
+        jwt = authHeader.substring(7);
+
+        // 4. Extract the username from the token
+        try {
+            username = jwtHelper.extractUsername(jwt);
+        } catch (Exception e) {
+            // Handle token extraction/parsing errors (e.g., expired or invalid token)
+            // You might want to log the error or send a specific response
+             System.err.println("Error extracting username from JWT: " + e.getMessage());
+            filterChain.doFilter(request, response); // Continue filter chain to allow Spring Security to handle
+            return;
+        }
+
+
+        // 5. Check if the username is extracted and the user is not already authenticated
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            // 6. Load user details from the database using the username
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
+
+            // 7. Validate the token
+            if (jwtHelper.validateToken(jwt, userDetails)) {
+                // 8. If the token is valid, create an authentication object
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null, // Credentials (password) are not needed here after validation
+                        userDetails.getAuthorities() // User's roles/authorities
+                );
+
+                // 9. Set authentication details (optional but good practice)
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
+                // 10. Set the authentication object in the SecurityContextHolder
+                // This marks the user as authenticated for the current request
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            } else {
+                 System.err.println("JWT Validation failed for username: " + username);
+            }
+        }
+
+        // 11. Continue the filter chain to the next filter or the target endpoint
+        filterChain.doFilter(request, response);
+    }
+}

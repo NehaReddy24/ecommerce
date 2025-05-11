@@ -1,0 +1,95 @@
+package com.products.config; // Adjust package as needed
+
+import com.products.security.JwtAuthenticationFilter; // Import your JWT Filter
+ // You'll create this in the next step for handling auth errors
+import com.products.CustomUserDetailsService; // Import your CustomUserDetailsService
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider; // Use DaoAuthenticationProvider
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder; // Import PasswordEncoder
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // Import the filter class
+
+@Configuration // Indicates this is a Spring configuration class
+@EnableWebSecurity // Enables Spring Security's web security support
+public class SecurityConfig {
+
+    private final CustomUserDetailsService userDetailsService; // Inject your custom UserDetailsService
+    private final JwtAuthenticationFilter jwtAuthenticationFilter; // Inject your JWT filter
+  
+    
+    public SecurityConfig(
+            CustomUserDetailsService userDetailsService,
+            JwtAuthenticationFilter jwtAuthenticationFilter
+            // JwtAuthenticationEntryPoint authenticationEntryPoint 
+    ) {
+        this.userDetailsService = userDetailsService;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        
+    }
+
+   
+    @Bean
+     PasswordEncoder passwordEncoder() {
+        // Use BCrypt for password hashing
+        return new BCryptPasswordEncoder();
+    }
+
+    
+    @Bean
+   DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService); // Set your custom user details service
+        authProvider.setPasswordEncoder(passwordEncoder()); // Set your password encoder
+        return authProvider;
+    }
+
+    
+    @Bean
+     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    
+    @Bean
+     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+          
+            .csrf(csrf -> csrf.disable())
+           
+            .authorizeHttpRequests(authorize -> authorize
+                
+                .requestMatchers("/api/auth/**").permitAll()
+
+                .requestMatchers("/api/products").permitAll() // Allow anyone to view all products (GET)
+                .requestMatchers("/api/products/{id}").permitAll() // Allow anyone to view a single product (GET)
+
+               
+                 .requestMatchers("/api/products").hasRole("ADMIN") // Explicitly require ADMIN for POST /api/products
+                 .requestMatchers("/api/products/{id}").hasRole("ADMIN") // Require ADMIN for PUT and DELETE on /api/products/{id}
+
+                
+                .anyRequest().authenticated()
+            )
+            
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // Register your Authentication Provider
+            .authenticationProvider(authenticationProvider())
+
+            
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    // You might also add a bean for CorsConfigurationSource if needed for more advanced CORS setup
+    // but the @CrossOrigin annotation is often sufficient for simple cases.
+}

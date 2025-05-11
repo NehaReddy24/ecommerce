@@ -1,0 +1,75 @@
+package com.products.config;
+
+import com.products.security.JwtAuthenticationFilter;
+import com.products.security.JwtAuthenticationEntryPoint;
+import com.products.service.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity; // <-- Import this
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.filter.CorsFilter;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List; // Import List
+
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity // <-- Add this annotation
+public class SecurityConfig {
+
+    // ... rest of your SecurityConfig code ...
+
+     @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .exceptionHandling(eh -> eh.authenticationEntryPoint(authenticationEntryPoint))
+
+            .authorizeHttpRequests(authorize -> authorize
+                // --- Public Endpoints ---
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/products").permitAll()
+                .requestMatchers("/api/products/{id}").permitAll()
+
+                // --- Protected Endpoints (Role-Based) ---
+                // Note: Many user/admin endpoints are now protected by @PreAuthorize,
+                // but we still need to ensure they require authentication at the URL level
+                // before method-level security is checked.
+                .requestMatchers("/api/admin/**").hasRole("ADMIN") // Example of protecting a path segment
+
+                // Protect checkout endpoints - Requires authenticated user
+                .requestMatchers("/api/checkout/**").authenticated()
+
+                // Protect user endpoints - Requires authenticated user
+                // Although @PreAuthorize is used, it's good to require authentication here too
+                 .requestMatchers("/api/user/**").authenticated() // <-- Add this line
+
+                // Require ADMIN role for specific product operations (already there)
+                 .requestMatchers("/api/products").hasRole("ADMIN") // POST /api/products
+                 .requestMatchers("/api/products/{id}").hasRole("ADMIN") // PUT/DELETE /api/products/{id}
+
+
+                // All other requests require authentication (this should come last)
+                // This catches any other paths not explicitly permitted or authenticated above
+                .anyRequest().authenticated() // This line ensures anything else is protected
+            )
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+    // ... rest of SecurityConfig code ...
+}
